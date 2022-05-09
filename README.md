@@ -42,11 +42,11 @@ Repository itself. Responsible for managing docker project structure contains do
 
 Containers: traefik, consul, api container, frontend container, Redis, MySQL.
 
-#### ABR-api
+#### [API](https://github.com/abrouter/api)
 
 API repository, based on the Laravel. Communicating via JSON API and REST API.
 
-#### ABR-front
+#### [Front](https://github.com/abrouter/front)
 Frontend repository, also based on the Laravel and contains React and vanilla JS.
 
 Could send the requests to abr-api to handle user authorization for respond with partially rendered html.
