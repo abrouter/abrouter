@@ -72,10 +72,20 @@ Currently, public configuration contains config only for manual deploy to the si
 
 ## Deploy
 
+#### 0.Cloning
+
+```
+mkdir abr
+cd abr
+git clone git@github.com:abrouter/compose.git
+git clone git@github.com:abrouter/api.git
+git clone git@github.com:abrouter/front.git
+```
 
 #### 1.Docker-compose.yml
-Generate the docker-compose.yml file. For development purposes use the following command:
+Generate the docker-compose.yml file. For development purposes use the following command (workdir compose):
 ```
+cd compose
 make build-dev
 ```
 
