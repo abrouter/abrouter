@@ -1,0 +1,200 @@
+version: '3.5'
+
+#TODO IMPLEMENT
+
+networks:
+  abr:
+    driver: bridge
+  abr-ext:
+    external: false
+    name: abr-ext
+
+services:
+  mysql:
+    image: percona:5.5
+    container_name: abr-mysql
+    ports:
+      - "33072:3306/tcp"
+    command: --max_allowed_packet=104857600 --innodb-buffer-pool-size=256M
+    networks:
+      - abr
+      - abr-ext
+    labels:
+      - "traefik.enable=false"
+    volumes:
+      - mysql:/var/lib/mysql
+    environment:
+      MYSQL_USER: abr
+      MYSQL_PASSWORD: "bestpass"
+      MYSQL_ROOT_PASSWORD: "bestpass"
+      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
+
+  abr-app-front:
+    networks:
+      - abr
+    build:
+      context: ../abrouter-front
+      dockerfile: ./Dockerfile
+      target: abr-front-app
+    image: abr-front-app:abr-front-app
+    container_name: abr-app-front
+    hostname: abr-app-front
+    depends_on:
+      - consul
+      - abr-app-api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.router2.tls.domains=#$(DOMAIN)"
+      - "traefik.http.routers.router2.rule=#$(FRONT_RULE)"
+      - "traefik.http.routers.router2.tls=#$(TLS)"
+      - "traefik.http.routers.router4.rule=PathPrefix(`/`)"
+      - "traefik.docker.network=abr"
+    volumes:
+      - ../abrouter-front/bootstrap/:/app/bootstrap:delegated
+      - ../abrouter-front/config:/app/config/:delegated
+      - ../abrouter-front/database:/app/database:delegated
+      - ../abrouter-front/docker/:/app/docker:delegated
+      - ../abrouter-front/Modules/:/app/Modules/:delegated
+      - ../abrouter-front/public/:/app/public:delegated
+      - ../abrouter-front/resources/:/app/resources:delegated
+      - ../abrouter-front/storage/:/app/storage:delegated
+      - ../abrouter-front/tests/:/app/tests:delegated
+      - ../abrouter-front/react/:/app/react:delegated
+      - ../abrouter-front/front-config/:/app/front-config:delegated
+      - ../abrouter-front/build/:/app/build:delegated
+    env_file:
+      - ../abrouter-front/docker-compose.env
+
+  consul:
+    image: consul:0.8.3
+    container_name: abr-consul
+    ports:
+      - "8512:8500"
+      - "8313:8300"
+    networks:
+      - abr
+      - abr-ext
+    labels:
+      - "traefik.enable=false"
+    volumes:
+      - consul:/consul/data
+    command: [
+      'consul',
+      'agent',
+      '-server',
+      '-bootstrap-expect=1',
+      '-data-dir=/consul/data',
+      '-client=0.0.0.0',
+      '-ui',
+      '-advertise=172.17.0.1'
+    ]
+
+  redis:
+    image: redis:alpine
+    networks:
+      - abr
+      - abr-ext
+    container_name: abr-redis
+    ports:
+      - "63806:6379"
+    volumes:
+      - redis:/data
+
+  abr-app-api:
+    networks:
+      - abr
+    build:
+      context: ../abrouter-api-main/
+      dockerfile: ./Dockerfile
+      target: abr-api
+    image: abr-api:abr-api
+    container_name: abr-app-api
+    hostname: docker-dev-local-om4
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.router3.rule=#$(API_RULE)"
+#      - "traefik.http.routers.router3.tls.certresolver=myresolver1"
+      - "traefik.http.routers.router3.middlewares=acao@docker"
+      - "traefik.http.routers.router3.tls.domains=#$(DOMAIN)"
+      - "traefik.docker.network=abr"
+      - "traefik.http.routers.router5.middlewares=acao@docker"
+      - "traefik.http.routers.router5.rule=PathPrefix(`/api/v1/`)"
+      - "traefik.http.middlewares.acao.headers.accesscontrolalloworigin=*"
+      - "traefik.http.middlewares.acao.headers.accessControlAllowHeaders=Content-type, Authorization"
+      - "traefik.http.middlewares.acao.headers.accessControlAllowMethods=POST,GET,PATCH,DELETE"
+    depends_on:
+      - mysql
+      - consul
+      - redis
+    ports:
+      - "#$(APP_PORT):80"
+    volumes:
+      - ../abrouter-api-main/bootstrap/:/app/bootstrap:delegated
+      - ../abrouter-api-main/config:/app/config/:delegated
+      - ../abrouter-api-main/database:/app/database:delegated
+      - ../abrouter-api-main/docker/:/app/docker:delegated
+      - ../abrouter-api-main/Modules/:/app/Modules/:delegated
+      - ../abrouter-api-main/public/:/app/public:delegated
+      - ../abrouter-api-main/resources/:/app/resources:delegated
+      - ../abrouter-api-main/storage/:/app/storage:delegated
+      - ../abrouter-api-main/tests/:/app/tests:delegated
+    env_file:
+      - ../abrouter-api-main/docker-compose.env
+
+
+  traefik-abr:
+    networks:
+      - abr
+      - abr-ext
+    container_name: abr-traefik
+    image: traefik:2.2
+    ports:
+      - "#$(INSECURE_PORT):#$(INSECURE_PORT)"
+      - "#$(SECURE_PORT):#$(SECURE_PORT)"
+      - "#$(TRAEFIK_PORT):8080"
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:#$(INSECURE_PORT)"
+#$(HTTPS_REDIRECT_RULES)
+#$(TOML_CONFIG)
+      - "--entrypoints.websecure.address=:#$(SECURE_PORT)"
+#TODO Make alive
+#      - "--certificatesResolvers.myresolver1.acme.email=yatsenkolesh@gmail.com"
+#      - "--certificatesResolvers.myresolver1.acme.preferredChain=ISRG Root X1"
+#      - "--certificatesResolvers.myresolver1.acme.storage=/acme/acme.json"
+#      - "--certificatesResolvers.myresolver1.acme.tlsChallenge=#$(TLS_CHALLENGE)"
+#      - "--certificatesResolvers.myresolver1.acme.httpChallenge.entryPoint=websecure"
+#      - "--certificatesResolvers.myresolver1.acme.dnsChallenge.provider=route53"
+#      - "--certificatesResolvers.myresolver1.acme.dnsChallenge.delayBeforeCheck=0"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=#$(INSECURE_PORT)"
+      - "traefik.frontend.rule=Host:localhost"
+      - "traefik.frontend.rule=Port:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${PWD}/acme/:/acme/
+      - ${PWD}/ssl/:/ssl/
+      - ${PWD}/traefik/:/traefik/
+#    environment:
+#      - AWS_HOSTED_ZONE_ID=XXX
+#      - AWS_ACCESS_KEY_ID=XXX
+#      - AWS_SECRET_ACCESS_KEY=XXX
+
+volumes:
+  #  consul:
+  #    driver: local
+  mysql:
+    driver: local
+  redis:
+    driver: local
+  php-logs:
+    driver: local
+  app-logs:
+    driver: local
+  nginx-logs:
+    driver: local
+  consul:
+    driver: local
