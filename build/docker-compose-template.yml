@@ -33,7 +33,7 @@ services:
     networks:
       - abr
     build:
-      context: ../abrouter-front
+      context: ../front
       dockerfile: ./Dockerfile
       target: abr-front-app
     image: abr-front-app:abr-front-app
@@ -104,7 +104,7 @@ services:
     networks:
       - abr
     build:
-      context: ../abrouter-api-main/
+      context: ../api/
       dockerfile: ./Dockerfile
       target: abr-api
     image: abr-api:abr-api
