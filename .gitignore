@@ -2,3 +2,4 @@ docker-compose.yml
 acme
 ssl
 ssl2
+build/defines.php
