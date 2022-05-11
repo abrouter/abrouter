@@ -27,6 +27,10 @@ install:
 	docker-compose exec abr-app-api composer install
 	docker-compose exec abr-app-front composer install
 
+.PHONY: passport
+install:
+	docker-compose exec abr-app-api php artisan passport:install
+
 .PHONY: build-prod
 build-prod:
 	php build/compose.php --mode=prod
