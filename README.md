@@ -164,4 +164,14 @@ And migrate:
 make migrate
 ```
 
+#### 8. Authorization
+
+Create oauth keys. Files will be created in /app/storage/. Please, be carefully and save oauth-*.key somewhere, because it's not included in the build. Losing this files can cause the loose of access to the accounts on your server. 
+```
+make passport
+```
+
+
+
+
 That's all what we need to deploy ABRouter 🎉. 
