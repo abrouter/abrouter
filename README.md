@@ -4,6 +4,8 @@ Additionally, feature flags management system, built-in statistics is also inclu
 
 The project provides high level of support for Laravel, Symfony and vanilla PHP.
 
+You're welcome to [visit the docs](https://docs.abrouter.com).
+
 
 ## Features
 
