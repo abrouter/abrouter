@@ -29,7 +29,7 @@ install:
 
 .PHONY: passport
 passport:
-    docker-compose exec abr-app-api chmod -R 777 /app/storage
+	docker-compose exec abr-app-api chmod -R 777 /app/storage
 	docker-compose exec abr-app-api php artisan passport:install
 
 .PHONY: build-prod
