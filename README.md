@@ -79,7 +79,7 @@ Currently, public configuration contains config only for manual deploy to the si
 ```
 mkdir abr
 cd abr
-git clone git@github.com:abrouter/compose.git
+git clone git@github.com:abrouter/abrouter.git
 git clone git@github.com:abrouter/api.git
 git clone git@github.com:abrouter/front.git
 ```
